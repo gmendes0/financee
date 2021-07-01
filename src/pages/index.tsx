@@ -9,18 +9,22 @@ import {
   BottomNavigationAction,
   Box,
 } from "@material-ui/core";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { useContext, useEffect, useState } from "react";
 import { FiMenu, FiLogOut } from "react-icons/fi";
 import { MdAddCircle, MdHome } from "react-icons/md";
 import Transaction from "../components/Transaction";
+import UserContext from "../contexts/UserContext";
+import { db } from "../services/firebase";
+import firebase from "firebase/app";
 
 type TransactionsType = {
   id: string;
   title: string;
-  price: string;
-  paid: boolean;
-  due_date: string;
-  payment_date: string;
+  price: number;
+  due_date: firebase.firestore.Timestamp;
+  payment_date: firebase.firestore.Timestamp;
+  created_at: firebase.firestore.Timestamp;
 };
 
 const useStyles = makeStyles(theme => ({
@@ -36,6 +40,7 @@ const useStyles = makeStyles(theme => ({
   appBarTitle: {
     display: "flex",
     justifySelf: "center",
+    fontFamily: "'Courgette', 'Roboto', sans-serif",
   },
   appBarIcon: {
     [theme.breakpoints.up("sm")]: {
@@ -68,69 +73,38 @@ const useStyles = makeStyles(theme => ({
 
 const Home: React.FC = () => {
   const classes = useStyles();
+  const router = useRouter();
 
   const [transactions, setTransactions] = useState<TransactionsType[]>([]);
 
+  const { user, signOut } = useContext(UserContext);
+
   useEffect(() => {
-    setTransactions([
-      {
-        id: "60d64091fdb026a662b96e22",
-        paid: true,
-        price: "2,316.00",
-        title: "reprehenderit ut",
-        due_date: "2016-11-28T04:54:27 +02:00",
-        payment_date: "2015-10-13T02:13:54 +03:00",
-      },
-      {
-        id: "60d64091fd49909f9f48d9d2",
-        paid: false,
-        price: "3,762.10",
-        title: "id culpa",
-        due_date: "2016-08-11T12:38:44 +03:00",
-        payment_date: "2017-05-27T04:11:22 +03:00",
-      },
-      {
-        id: "60d6409129d6b5f59b160c99",
-        paid: false,
-        price: "1,766.20",
-        title: "adipisicing voluptate",
-        due_date: "2016-10-31T12:42:02 +02:00",
-        payment_date: "2019-08-27T04:58:09 +03:00",
-      },
-      {
-        id: "60d64091ca0d1bce5bfe942c",
-        paid: true,
-        price: "3,306.63",
-        title: "pariatur esse",
-        due_date: "2017-05-17T04:59:41 +03:00",
-        payment_date: "2016-08-08T09:38:19 +03:00",
-      },
-      {
-        id: "60d64091ee86ddca6d8df3a4",
-        paid: true,
-        price: "1,790.19",
-        title: "mollit proident",
-        due_date: "2016-11-03T04:16:40 +02:00",
-        payment_date: "2017-11-06T06:21:57 +02:00",
-      },
-      {
-        id: "60d64091cdc9e7d3dd820cf4",
-        paid: true,
-        price: "2,982.62",
-        title: "aute sunt",
-        due_date: "2016-12-05T12:03:40 +02:00",
-        payment_date: "2015-02-24T01:18:57 +03:00",
-      },
-      {
-        id: "60d6409150d00a11ac0265ba",
-        paid: true,
-        price: "1,113.68",
-        title: "incididunt ut",
-        due_date: "2016-09-07T05:29:43 +03:00",
-        payment_date: "2016-12-08T12:36:07 +02:00",
-      },
-    ]);
-  }, []);
+    if (!user) {
+      router.push("/signin");
+    }
+
+    db.collection("transactions")
+      .where("user_id", "==", user.uid)
+      .get()
+      .then(querySnapshot => {
+        const storedTransactions = querySnapshot.docs.map(
+          doc =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as TransactionsType)
+        );
+
+        setTransactions(storedTransactions);
+      });
+  }, [user, router]);
+
+  function handleSignOut() {
+    signOut();
+  }
+
+  if (!user) return <div />;
 
   return (
     <Box className={classes.root}>
@@ -140,9 +114,9 @@ const Home: React.FC = () => {
             <FiMenu />
           </IconButton>
           <Typography variant="h6" className={classes.appBarTitle}>
-            Finance
+            Financee
           </Typography>
-          <IconButton edge="end">
+          <IconButton edge="end" onClick={handleSignOut}>
             <FiLogOut />
           </IconButton>
         </Toolbar>
@@ -158,21 +132,34 @@ const Home: React.FC = () => {
           Transações
         </Typography>
 
-        {transactions.map(transaction => (
-          <Transaction
-            key={transaction.id}
-            title={transaction.title}
-            price={Number.parseFloat(transaction.price.replace(",", ""))}
-            status={`Pago em: ${transaction.payment_date}`}
-          />
-        ))}
+        {transactions.map(transaction => {
+          const date = transaction.payment_date
+            ? transaction.payment_date
+            : transaction.due_date;
+
+          return (
+            <Transaction
+              key={transaction.id}
+              title={transaction.title}
+              price={transaction.price}
+              status={`${
+                transaction.payment_date ? "Pago em" : "Vence em"
+              }: ${date.toDate().toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}`}
+            />
+          );
+        })}
 
         <Toolbar />
       </Container>
       <BottomNavigation className={classes.bottomNavigation}>
         <BottomNavigationAction
-          label="Adicionar"
           icon={<MdAddCircle size={32} />}
+          showLabel={false}
+          onClick={() => router.push("/transactions/create")}
         />
       </BottomNavigation>
     </Box>

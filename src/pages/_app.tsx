@@ -1,5 +1,6 @@
 import { ThemeProvider, CssBaseline } from "@material-ui/core";
 import { useEffect } from "react";
+import { UserContextProvider } from "../contexts/UserContext";
 import theme from "../theme/theme";
 
 function MyApp({ Component, pageProps }) {
@@ -12,10 +13,12 @@ function MyApp({ Component, pageProps }) {
   }, []);
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Component {...pageProps} />
-    </ThemeProvider>
+    <UserContextProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </UserContextProvider>
   );
 }
 

@@ -17,6 +17,8 @@ import Transaction from "../components/Transaction";
 import UserContext from "../contexts/UserContext";
 import { db } from "../services/firebase";
 import firebase from "firebase/app";
+import Header from "../components/Header";
+import ProtectedPage from "../components/ProtectedPage";
 
 type TransactionsType = {
   id: string;
@@ -30,22 +32,6 @@ type TransactionsType = {
 const useStyles = makeStyles(theme => ({
   root: {
     height: "100vh",
-  },
-  appBar: {
-    boxShadow: theme.shadows[3],
-  },
-  toolbar: {
-    justifyContent: "space-between",
-  },
-  appBarTitle: {
-    display: "flex",
-    justifySelf: "center",
-    fontFamily: "'Courgette', 'Roboto', sans-serif",
-  },
-  appBarIcon: {
-    [theme.breakpoints.up("sm")]: {
-      display: "none",
-    },
   },
   title: {
     margin: `${theme.spacing(2)}px 0`,
@@ -80,89 +66,70 @@ const Home: React.FC = () => {
   const { user, signOut } = useContext(UserContext);
 
   useEffect(() => {
-    if (!user) {
-      router.push("/signin");
-    }
+    if (user)
+      db.collection("transactions")
+        .where("user_id", "==", user.uid)
+        .get()
+        .then(querySnapshot => {
+          const storedTransactions = querySnapshot.docs.map(
+            doc =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              } as TransactionsType)
+          );
 
-    db.collection("transactions")
-      .where("user_id", "==", user.uid)
-      .get()
-      .then(querySnapshot => {
-        const storedTransactions = querySnapshot.docs.map(
-          doc =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            } as TransactionsType)
-        );
-
-        setTransactions(storedTransactions);
-      });
-  }, [user, router]);
-
-  function handleSignOut() {
-    signOut();
-  }
-
-  if (!user) return <div />;
+          setTransactions(storedTransactions);
+        });
+  }, [user]);
 
   return (
-    <Box className={classes.root}>
-      <AppBar color="inherit" classes={{ root: classes.appBar }}>
-        <Toolbar className={classes.toolbar}>
-          <IconButton edge="start" className={classes.appBarIcon}>
-            <FiMenu />
-          </IconButton>
-          <Typography variant="h6" className={classes.appBarTitle}>
-            Financee
-          </Typography>
-          <IconButton edge="end" onClick={handleSignOut}>
-            <FiLogOut />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-      <Toolbar />
-      <Container>
-        <Typography
-          component="h2"
-          variant="h5"
-          color="textSecondary"
-          className={classes.title}
-        >
-          Transações
-        </Typography>
-
-        {transactions.map(transaction => {
-          const date = transaction.payment_date
-            ? transaction.payment_date
-            : transaction.due_date;
-
-          return (
-            <Transaction
-              key={transaction.id}
-              title={transaction.title}
-              price={transaction.price}
-              status={`${
-                transaction.payment_date ? "Pago em" : "Vence em"
-              }: ${date.toDate().toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}`}
-            />
-          );
-        })}
-
+    <ProtectedPage>
+      <Box className={classes.root}>
+        <Header />
         <Toolbar />
-      </Container>
-      <BottomNavigation className={classes.bottomNavigation}>
-        <BottomNavigationAction
-          icon={<MdAddCircle size={32} />}
-          showLabel={false}
-          onClick={() => router.push("/transactions/create")}
-        />
-      </BottomNavigation>
-    </Box>
+        <Container>
+          <Typography
+            component="h2"
+            variant="h5"
+            color="textSecondary"
+            className={classes.title}
+          >
+            Transações
+          </Typography>
+
+          {transactions.map(transaction => {
+            const date = transaction.payment_date
+              ? transaction.payment_date
+              : transaction.due_date;
+
+            return (
+              <Transaction
+                key={transaction.id}
+                title={transaction.title}
+                price={transaction.price}
+                status={`${
+                  transaction.payment_date ? "Pago em" : "Vence em"
+                }: ${date.toDate().toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}`}
+              />
+            );
+          })}
+
+          <Toolbar />
+        </Container>
+        <BottomNavigation className={classes.bottomNavigation}>
+          <BottomNavigationAction
+            icon={<MdAddCircle size={32} />}
+            showLabel={false}
+            onClick={() => router.push("/transactions/create")}
+          />
+        </BottomNavigation>
+      </Box>
+    </ProtectedPage>
   );
 };
 

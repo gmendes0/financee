@@ -1,13 +1,13 @@
 import { makeStyles, Box, Typography } from "@material-ui/core";
 import { motion } from "framer-motion";
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles({
   appBarTitle: {
     display: "flex",
     justifySelf: "center",
     fontFamily: "'Courgette', 'Roboto', sans-serif",
   },
-}));
+});
 
 export default function Loading(): JSX.Element {
   const classes = useStyles();

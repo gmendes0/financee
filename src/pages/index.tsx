@@ -1,9 +1,7 @@
 import {
-  AppBar,
   makeStyles,
   Toolbar,
   Typography,
-  IconButton,
   Container,
   BottomNavigation,
   BottomNavigationAction,
@@ -11,14 +9,13 @@ import {
 } from "@material-ui/core";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
-import { FiMenu, FiLogOut } from "react-icons/fi";
-import { MdAddCircle, MdHome } from "react-icons/md";
-import Transaction from "../components/Transaction";
-import UserContext from "../contexts/UserContext";
+import { MdAddCircle } from "react-icons/md";
 import { db } from "../services/firebase";
 import firebase from "firebase/app";
 import Header from "../components/Header";
 import ProtectedPage from "../components/ProtectedPage";
+import UserContext from "../contexts/UserContext";
+import Transaction from "../components/Transaction";
 
 type TransactionsType = {
   id: string;
@@ -63,7 +60,7 @@ const Home: React.FC = () => {
 
   const [transactions, setTransactions] = useState<TransactionsType[]>([]);
 
-  const { user, signOut } = useContext(UserContext);
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     if (user)

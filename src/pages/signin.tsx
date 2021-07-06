@@ -1,7 +1,7 @@
 import { Box, makeStyles, Typography, Button } from "@material-ui/core";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { FcGoogle } from "react-icons/fc";
 import UserContext from "../contexts/UserContext";
 

@@ -5,11 +5,11 @@ type NavItemPropsType = {
   link: string;
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles({
   navItem: {
     padding: "0 20px",
   },
-}));
+});
 
 const NavItem: React.FC<NavItemPropsType> = ({ link, children }) => {
   const classes = useStyles();

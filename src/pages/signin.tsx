@@ -1,4 +1,5 @@
 import { Box, makeStyles, Typography, Button } from "@material-ui/core";
+import { GetStaticProps } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useContext } from "react";

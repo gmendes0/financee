@@ -4,14 +4,26 @@ import {
   makeStyles,
   Typography,
   IconButton,
+  colors,
 } from "@material-ui/core";
+import { useRouter } from "next/router";
+import { useContext } from "react";
 import { FiUpload } from "react-icons/fi";
-import { MdAttachMoney } from "react-icons/md";
+import { MdAttachMoney, MdMoneyOff } from "react-icons/md";
+import { useDispatch } from "react-redux";
+import UserContext from "../contexts/UserContext";
+import { db } from "../services/firebase";
+import {
+  transactionsLoaded,
+  TransactionsType,
+} from "../store/features/transactions.slice";
 
 type TransactionPropsType = {
+  id: string;
   title: string;
   status: string;
   price: number;
+  alreadyPaid?: boolean;
 };
 
 const useStyles = makeStyles(theme => ({
@@ -38,11 +50,39 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const Transaction: React.FC<TransactionPropsType> = ({
+  id,
   title,
   status,
   price,
+  alreadyPaid,
 }) => {
   const classes = useStyles();
+  const dispatch = useDispatch();
+
+  const { user } = useContext(UserContext);
+
+  function toggleTransactionStatus() {
+    const transactions = db.collection("transactions");
+
+    transactions
+      .doc(id)
+      .update({ payment_date: alreadyPaid ? null : new Date() })
+      .then(() => {
+        transactions
+          .where("user_id", "==", user.uid)
+          .get()
+          .then(qs => {
+            const transactionsList = qs.docs.map(doc => {
+              return {
+                id: doc.id,
+                ...doc.data(),
+              } as TransactionsType;
+            });
+
+            dispatch(transactionsLoaded(transactionsList));
+          });
+      });
+  }
 
   return (
     <Box display="flex" flexDirection="column" className={classes.container}>
@@ -65,8 +105,12 @@ const Transaction: React.FC<TransactionPropsType> = ({
           </Typography>
         </Box>
         <Box display="flex" flexDirection="row">
-          <IconButton>
-            <MdAttachMoney />
+          <IconButton onClick={toggleTransactionStatus}>
+            {alreadyPaid ? (
+              <MdMoneyOff color={`${colors.green[600]}`} />
+            ) : (
+              <MdAttachMoney />
+            )}
           </IconButton>
           <IconButton>
             <FiUpload />

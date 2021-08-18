@@ -85,7 +85,13 @@ const Transaction: React.FC<TransactionPropsType> = ({
   }
 
   return (
-    <Box display="flex" flexDirection="column" className={classes.container}>
+    <Box
+      display="flex"
+      flexDirection="column"
+      className={classes.container}
+      border={2}
+      borderColor={!alreadyPaid ? colors.orange.A100 : colors.green[200]}
+    >
       <Box
         display="flex"
         flexDirection="row"
